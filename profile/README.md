@@ -52,14 +52,25 @@ pairs validated at the write boundary. Refuse-at-write rejection of
 unknown enums + missing `authored_by` fields stops bad observations
 from landing in the substrate (PR #79 layered with PR #81 —
 SUBSTRATE-BOUNDARY DISCIPLINE applied at two layers of the same
-write path).
+write path). *The trio shape is informed by ACE's reference design;
+the refuse-at-write enforcement is our substrate-boundary
+contribution.*
 
 **Pull-routing with substrate-honest reason tags** — agents claim
 tasks matching their `capability_offer`. The router distinguishes
 `claim_not_visible` (daemon read-after-write propagation lag) from
 `lost_tiebreak` (actual competitor) instead of collapsing both into
 "outcompeted" (F5 / PR #85). Surfacing the actual root cause
-prevents agents from backing off pointlessly.
+prevents agents from backing off pointlessly. *The pull-route +
+capability-offer pattern is informed by ACE; the F5 substrate-
+honesty distinction is our addition.*
+
+**Rule-based curator** — turns scratchpad activity into queryable
+bulletpoints with **zero LLM tokens consumed** (deterministic,
+auditable, free). Built as the first product of one of our
+substrate upgrades. *Some tool-call functionality threaded in from
+LocalForge / Serena; the curator's design, the bulletpoint emission
+pipeline, and the zero-LLM-tokens framing are ours.*
 
 **Hook telemetry sink (B1)** — every fire/suppress/error of every
 cluster discipline hook gets schema-validated and append-only
