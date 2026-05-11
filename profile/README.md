@@ -95,6 +95,18 @@ V2 reads exact `usage.input_tokens + cache_creation_input_tokens +
 cache_read_input_tokens` from `.jsonl` — the substrate-not-proxy
 doctrine applied to context-fill measurement.
 
+## Where the borrowed primitives stop and the production substrate starts
+
+> *We take an inch but we make a mile.*
+
+ACE gives a reference design for trio observations and pull-routing.
+LocalForge / Serena give tool-call primitives. None of those upstream
+pieces are production-safe on their own; getting them there is the
+actual work. Every refuse-at-write boundary, every substrate-honest
+reason tag, every F-finding closure, every doctrine in the handbook
+is what makes a borrowed primitive into something you can run at
+scale without it eating itself. The next section is the receipts.
+
 ## Selected receipts
 
 **Nine substrate findings (F1–F10, with F2 in two layers) closed
