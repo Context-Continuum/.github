@@ -3,12 +3,12 @@
 > Operating discipline for multi-agent production systems.
 > The public face of a two-person vector-management-tech LLC.
 
-We're a two-person operation — **Randall** and **Owen** — running a
-federated, multi-location, multi-machine Claude-agent environment in
-production. The agents write the code. We write the operating system
-that keeps them productive across locations, sessions, and compaction
-events: the doctrines, the substrate-boundary checks, the federation
-plumbing, the recovery patterns when something deadlocks at 3am.
+We're a two-person operation running a federated, multi-location,
+multi-machine Claude-agent environment in production. The agents
+write the code. We write the operating system that keeps them
+productive across locations, sessions, and compaction events: the
+doctrines, the substrate-boundary checks, the federation plumbing,
+the recovery patterns when something deadlocks at 3am.
 
 This org is where that operating discipline gets distilled into a
 form other people can read.
@@ -113,12 +113,12 @@ for federated multi-operator attribution.
 
 ## Contact
 
-**Randall** — [email or LinkedIn placeholder]
-**Owen** — [email or LinkedIn placeholder]
+[Inquiries: contact path TBD — email, LinkedIn, or LLC website
+once decided.]
 
-For inquiries about the operating discipline, the handbook, or
-about retaining either of us for collaborative-agent infrastructure
-work, either contact works.
+For questions about the operating discipline, the handbook, or
+about retaining the team for collaborative-agent infrastructure
+work.
 
 ---
 
