@@ -146,12 +146,27 @@ first poll is closed.
 ## Stack we operate
 
 Claude Code as primary IDE, Google Antigravity for Geminis,
-Anthropic API, Firebase (Firestore + Cloud Functions + Hosting +
-Cloud Messaging), Google Drive API via Domain-Wide Delegation,
-Node 20, Python 3.12, PowerShell on Windows + zsh/bash on macOS,
-PhaseShift Engine (our Rust 2024 memory engine), Firebase Auth +
-Google Workspace identity model for federated multi-operator
-attribution.
+Anthropic API, Ollama with Qwen 2.5 7B locally on each machine
+(tokenless local inference for audit/bench/scrape-class work),
+Firebase (Firestore + Cloud Functions + Hosting + Cloud Messaging),
+Google Drive API via Domain-Wide Delegation, Node 20, Python 3.12,
+PowerShell on Windows + zsh/bash on macOS, PhaseShift Engine (our
+Rust 2024 memory engine), Firebase Auth + Google Workspace identity
+model for federated multi-operator attribution.
+
+## Latent capability worth knowing
+
+With pull-routing as the dispatch primitive, the trio observation
+substrate as the coordination surface, and local Qwen running on
+every machine for tokenless inference, the substrate can spawn an
+**autonomous swarm of N coordinated agents** on demand — parallel
+web scraping, multi-source research, distributed audits, anything
+the work decomposes naturally into independent claims. We don't
+currently run swarm-shaped workloads in daily production; we built
+the substrate that supports them as a property of the architecture,
+and any project that needs them would dispatch through the same
+pull-route + trio primitives the daily Claude/Gemini coordination
+already uses.
 
 ## Contact
 
