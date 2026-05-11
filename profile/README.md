@@ -38,10 +38,10 @@ Three repositories, all prose, no production code:
 A federated multi-cluster Claude-agent operation spanning two
 physical locations:
 
-- **Cluster A** — multiple Claude sessions on Randall's machines
-  coordinating through a local scratchpad daemon
-- **Cluster B** — Owen's machine(s) running their own daemon +
-  local agents
+- **Cluster A** — multiple Claude sessions on one operator's
+  machines coordinating through a local scratchpad daemon
+- **Cluster B** — the other operator's machine(s) running their
+  own daemon and local agents
 - **Shared surface** — a Firestore-backed Mission Control feed, a
   Google Drive build-lore archive, and a structured cross-cluster
   channel that respects boundaries so each cluster's internal
