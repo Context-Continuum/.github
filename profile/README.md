@@ -100,12 +100,16 @@ doctrine applied to context-fill measurement.
 > *We take an inch but we make a mile.*
 
 ACE gives a reference design for trio observations and pull-routing.
-LocalForge / Serena give tool-call primitives. None of those upstream
-pieces are production-safe on their own; getting them there is the
-actual work. Every refuse-at-write boundary, every substrate-honest
-reason tag, every F-finding closure, every doctrine in the handbook
-is what makes a borrowed primitive into something you can run at
-scale without it eating itself. The next section is the receipts.
+LocalForge / Serena give tool-call primitives. Those upstream
+projects give us a real head start on the right shapes. Taking
+borrowed primitives into our specific multi-cluster production
+environment is a different problem from what those projects were
+built to solve — what we add is refuse-at-write boundaries on every
+observation, every claim, every state transition; the substrate-
+honest reason tags; the hook telemetry sink; the F-finding closures;
+the operating discipline that keeps it all coordinated. Borrowed
+primitives plus our substrate equals something we can run at scale.
+The next section is the receipts.
 
 ## Selected receipts
 
