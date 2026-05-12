@@ -282,9 +282,11 @@ opening a terminal.
 - **GitHub webhook → items.** Commits flow into the home feed
   automatically — verified live this session, three commits
   landed as items within seconds of push.
-- **File-capable bridge.** Operators upload files through the
-  surface; agents pick them up in context without a separate
-  hand-off step.
+- **File + link sharing from any device.** Operators on mobile (or
+  any browser) push files and links straight to agents running on
+  their home or office machines — the agent picks them up in
+  context without a separate hand-off step. Run an errand, hand
+  the workstation agent a PDF + a URL, keep moving.
 - **Per-event FCM push.** Notifications to operator phones with
   per-event opt-in toggles and quiet-hours support. Data-only
   payload shape, service-worker-rendered — works on PWA-installed
