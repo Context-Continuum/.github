@@ -36,6 +36,23 @@ projects that need representation on both ends. The mechanism is
 proven end-to-end; we use it when projects span, not as a daily
 routine.
 
+## Quickstart
+
+The engine ships with a 15-minute "build a memory-aware agent from
+cold daemon to first decaying recall" walkthrough at
+`docs/QUICKSTART.md`. Path: start the daemon → `store_memory` a
+fact → `recall` it via semantic search → re-recall and watch the
+decay math run live → `delete_memory` to demonstrate the operations
+surface. Single-binary, no cloud calls, no external API keys to
+get to the first useful recall.
+
+For substrate-level pre-flight,
+[Context-Continuum/swarm's `smoke.py`](https://github.com/Context-Continuum/swarm/blob/main/smoke.py)
+exercises every coordination primitive end-to-end against a running
+daemon in seconds (register → claim → heartbeat → GPU mutex
+round-trip → update → hive snapshot → negative session-token gate).
+No Ollama or web access required.
+
 ## The substrate
 
 **PhaseShift Engine** — Rust 2024, our agentic memory layer. Recall
@@ -242,12 +259,18 @@ The next section is the receipts.
 
 ## Selected receipts
 
-**Nine substrate findings (F1–F10, with F2 in two layers) closed
-across a single 3h 44m session** — 2026-05-10 21:38 to 2026-05-11
-01:23, verified against `git log --format="%aI %h"`. About 25
-minutes per finding, each carrying root-cause analysis +
-architectural-boundary decision + implementation + regression test +
-inventory-row update + PR. Highlights:
+The receipts the reviewers ask for: real production-fragility bugs
+caught and closed, root-cause-analyzed + tested + documented + PR'd
+— not toy demos.
+
+**Nine substrate findings (F1–F10, F2 in two layers) closed in a
+single 3h 44m session** — 2026-05-10 21:38 to 2026-05-11 01:23,
+verified against `git log --format="%aI %h"`. ~25 minutes per
+finding, each carrying root-cause analysis + architectural-boundary
+decision + implementation + regression test + inventory-row update
++ PR. These weren't bugs we already knew about; they were silent
+failure modes the cluster surfaced *because* the substrate hooks
+were watching. Highlights:
 
 - **F6** — wake-filter silently disabled cluster-wide on missing
   Firestore creds. Fixed at the wrapper boundary: auto-detect
@@ -272,6 +295,39 @@ bridge launcher now polls daemon `/healthz` at the wrapper boundary
 before invoking python, so the boot-race that exited bridge on
 first poll is closed.
 
+These are the kinds of silent failure modes that surface only in
+multi-machine, multi-runtime, long-running production — not in
+single-machine demos. The same substrate hooks that surface them
+are the ones described in the substrate-section paragraphs above.
+
+## Production discipline
+
+- **Test coverage at the unit + integration layer.** Per-crate
+  breakdown maintained in `CLAUDE.md`: 27 engine tests (manager +
+  edge config), 30 embed tests (31 with `--features onnx`), 25
+  memory tests (decay math + payload + collection), 7 MCP unit + 8
+  stdio integration tests, +10 HTTP integration tests on a live
+  socket with `--features daemon`, 4 REST server integration tests.
+- **Release notes locked, tier promotion ceremonial.** v0.1.0
+  shipped with the measured 10k cluster-A/B (CoreML M3 + CUDA RTX,
+  both lanes on the same ONNX export, byte-identical recall
+  cross-EP). v0.1.1 was a tier-promotion release — locked release
+  notes lead with *"Tier 1 across the board. 1M validation
+  complete"* and carry a v0.1.0-vs-v0.1.1 differential table for
+  every metric (27× lift on dense p50 at 1M, 5.5× ingest rate
+  lift). Release ceremony is the gate, not the announcement.
+- **API_REFERENCE as source-of-truth.** `docs/API_REFERENCE.md` is
+  regenerated against a live daemon — the MCP tool definitions come
+  from `tool_catalog_daemon()` in `crates/mcp/src/tools.rs`, the
+  HTTP route table from `router()` in
+  `crates/server/src/handlers.rs` + `crates/mcp/src/transport_http.rs`.
+  If a tool or route changes, regen catches the drift.
+- **Canonical smoke after every change.** `cargo run --example
+  proof_of_life` is the engine's "does it still work" check — must
+  print `All proof-of-life checks passed`, cosine top-1 must be
+  1.0000 for the probe vector. Convention: run after any non-
+  trivial engine change before opening the PR.
+
 ## Stack we operate
 
 Claude Code as primary IDE, Google Antigravity for Geminis,
@@ -282,6 +338,28 @@ Google Drive API via Domain-Wide Delegation, Node 20, Python 3.12,
 PowerShell on Windows + zsh/bash on macOS, PhaseShift Engine (our
 Rust 2024 memory engine), Firebase Auth + Google Workspace identity
 model for federated multi-operator attribution.
+
+## Security & deployment
+
+- **Air-gapped local-first.** No external API dependencies in the
+  hot path. Models bundled with the binary, vectors and metadata
+  in a single data directory, no cloud calls required for any read
+  or write. Deployable on a laptop with no network.
+- **Auth-by-default on LAN bindings.** The daemon refuses to start
+  bound to a non-loopback address without `PHASESHIFT_AUTH_TOKEN`
+  set — a misconfigured launch can't be silently world-readable.
+  Loopback binds (`127.0.0.1:7878`) run no-auth for local-only
+  workloads.
+- **Single-binary deployment.** One Rust binary handles every
+  deployment mode (stdio subprocess, MCP-over-HTTP daemon, REST
+  server). No Docker required, no Python runtime, no JVM. The ONNX
+  Runtime DLL is user-supplied via `load-dynamic` linking so the
+  binary stays under your control.
+- **Narrow `drive.file` OAuth scope.** Mission Control's Drive
+  integration can only see or edit files it created itself or files
+  the operator explicitly attaches via Picker. Cannot read the rest
+  of the operator's Drive — disqualifies the OAuth-creep concern
+  up front.
 
 ## Mission Control
 
