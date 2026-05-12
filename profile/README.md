@@ -47,6 +47,46 @@ recalled memories stay strong as the underlying text ages. Air-
 gapped local-first design, P2P sync across machines, MCP endpoint
 for direct agent integration.
 
+**1M-record validation, Tier 1 across the board**
+(`docs/RELEASE_NOTES_v0.1.1.md`). 1M-record corpus, BGE-base 768d,
+dense recall: **2h 53m wall-clock** end-to-end ingest, **26.51 ms
+dense p50** (vs. v0.1.0's 720 ms brute-force scan — **27× lift**),
+**15.41 ms LAN single-client p50** on a persistent HTTP connection,
+ingest rate **stays flat** across 10k → 1M (100.6 → 96.21 rec/s, a
+**5.5× lift** in sustained throughput vs. v0.1.0). The flat curve
+is the load-bearing observation — 100× more records, dense p50
+essentially unchanged. HNSW's log-N scaling validated empirically
+rather than asserted. The first 1M run was a 16-hour ingest with
+720-919 ms recall p50 — we'd shipped HNSW indexing as manual-only
+so cold-ingest never triggered it, and recalls were brute-force
+scans against a Plain segment. v0.1.1's `bulk_ingest` MCP tool +
+automatic HNSW build closed the gap.
+
+**ONNX embedder** — `crates/embed` ships an `OnnxEmbedder` (feature
+`onnx`) on the `ort` 2.0 binding to ONNX Runtime 1.24, with
+`load-dynamic` linking so the runtime DLL stays out of our binary
+(user supplies it at runtime — single-binary positioning preserved).
+Production model: **BGE-base-en-v1.5** (768d, BERT WordPiece,
+512-token max). **Byte-identical recall results between CoreML on
+Apple M3 (ANE-dispatched) and CUDA on RTX-class (CUDA Graph +
+IoBinding)** on the same ONNX export — zero precision drift across
+execution providers (`results/cluster_ab_10k_bge_base.md`). A
+`HashEmbedder` fallback keeps the default build dependency-light
+for callers who bring their own vectors.
+
+**Multi-language AST extraction** — `crates/ast` parses four
+languages via Rust-native crates with zero tree-sitter / libclang
+FFI: Rust (`syn`), Python (`rustpython-parser`), JavaScript
+(`oxc_parser` — the Oxc/Rolldown parser), and TypeScript (same
+parser via `SourceType::ts()`). Feature-gated per-language so the
+default build stays slim. `MemoryCollection::ingest_source_file`
+(in `crates/memory/src/ast_ingest.rs`) chains extraction → per-item
+embedding → stable-concept-id upsert
+(`sha256(file_stem__kind__name)[..8]`), so re-ingesting an updated
+source file UPSERTS the matching memories in place rather than
+producing duplicates. Code-search index that updates as the codebase
+changes, with no FFI build complexity in the dependency tree.
+
 **Trio observation substrate** — typed `(claim_kind, evidence_kind)`
 pairs validated at the write boundary. Refuse-at-write rejection of
 unknown enums + missing `authored_by` fields stops bad observations
