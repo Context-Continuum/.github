@@ -87,6 +87,29 @@ source file UPSERTS the matching memories in place rather than
 producing duplicates. Code-search index that updates as the codebase
 changes, with no FFI build complexity in the dependency tree.
 
+**Hook telemetry sink (B1)** — every fire/suppress/error of every
+cluster discipline hook gets schema-validated and append-only
+logged to `~/.claude/state/hook_telemetry.jsonl`. Read API via
+`bridge.hook_telemetry_read.query_telemetry()`. **Correction events
+use append-only join keys** (`corrects_session_id`,
+`corrects_ts_ms`) — post-hoc patches surface alongside the
+originals they corrected, without mutating source lines. Audit-trail
+integrity preserved.
+
+**Wake-reliability harness** — three-module nightly pipeline
+(`wake_predictor.py` → `wake_observer.py` → `wake_reconciler.py`,
+@02:00 local) that classifies each session's breadcrumbing into
+five states: `fired_on_time` / `fired_late` / `fired_early` /
+`missed` / `never_reached_threshold`. Monitor-fragility events that
+were anecdotes are now substrate signals with recurring measurement.
+
+**Breadcrumb @ 88% with substrate-not-proxy V2** — V1 used byte-
+count estimation; rejected after measured calibration drift of 23%
+between two same-cluster agents (`SOP_AUTOMATION_INVENTORY.md:31`).
+V2 reads exact `usage.input_tokens + cache_creation_input_tokens +
+cache_read_input_tokens` from `.jsonl` — the substrate-not-proxy
+doctrine applied to context-fill measurement.
+
 **Trio observation substrate** — typed `(claim_kind, evidence_kind)`
 pairs validated at the write boundary. Refuse-at-write rejection of
 unknown enums + missing `authored_by` fields stops bad observations
@@ -111,29 +134,6 @@ auditable, free). Built as the first product of one of our
 substrate upgrades. *Some tool-call functionality threaded in from
 LocalForge / Serena; the curator's design, the bulletpoint emission
 pipeline, and the zero-LLM-tokens framing are ours.*
-
-**Hook telemetry sink (B1)** — every fire/suppress/error of every
-cluster discipline hook gets schema-validated and append-only
-logged to `~/.claude/state/hook_telemetry.jsonl`. Read API via
-`bridge.hook_telemetry_read.query_telemetry()`. **Correction events
-use append-only join keys** (`corrects_session_id`,
-`corrects_ts_ms`) — post-hoc patches surface alongside the
-originals they corrected, without mutating source lines. Audit-trail
-integrity preserved.
-
-**Wake-reliability harness** — three-module nightly pipeline
-(`wake_predictor.py` → `wake_observer.py` → `wake_reconciler.py`,
-@02:00 local) that classifies each session's breadcrumbing into
-five states: `fired_on_time` / `fired_late` / `fired_early` /
-`missed` / `never_reached_threshold`. Monitor-fragility events that
-were anecdotes are now substrate signals with recurring measurement.
-
-**Breadcrumb @ 88% with substrate-not-proxy V2** — V1 used byte-
-count estimation; rejected after measured calibration drift of 23%
-between two same-cluster agents (`SOP_AUTOMATION_INVENTORY.md:31`).
-V2 reads exact `usage.input_tokens + cache_creation_input_tokens +
-cache_read_input_tokens` from `.jsonl` — the substrate-not-proxy
-doctrine applied to context-fill measurement.
 
 ## Where the borrowed primitives stop and the production substrate starts
 
@@ -194,19 +194,39 @@ PowerShell on Windows + zsh/bash on macOS, PhaseShift Engine (our
 Rust 2024 memory engine), Firebase Auth + Google Workspace identity
 model for federated multi-operator attribution.
 
-## Latent capability worth knowing
+## Autonomous research swarm
 
-With pull-routing as the dispatch primitive, the trio observation
-substrate as the coordination surface, and local Qwen running on
-every machine for tokenless inference, the substrate can spawn an
-**autonomous swarm of N coordinated agents** on demand — parallel
-web scraping, multi-source research, distributed audits, anything
-the work decomposes naturally into independent claims. We don't
-currently run swarm-shaped workloads in daily production; we built
-the substrate that supports them as a property of the architecture,
-and any project that needs them would dispatch through the same
-pull-route + trio primitives the daily Claude/Gemini coordination
-already uses.
+A separate coordination plane on top of PSE. Eight dedicated MCP
+tools (`register_drone`, `claim_task`, `update_task`,
+`heartbeat_task`, `deploy_task`, `hive_status`, `gpu_acquire`,
+`gpu_release`) let N drone processes register with the daemon,
+claim work from a shared queue, run a research pipeline (search →
+scrape → extract → synthesize → ingest against local Qwen for
+tokenless inference), and push bounded follow-up topics back to
+the queue.
+
+Drones coordinate through the vector store itself. Each drone
+recalls sibling research before generating its own queries and is
+pushed toward orthogonal angles ("Boid Flocking Matrix"). Follow-up
+topics go through a dedup gate that skips candidates the swarm
+already covers. A heartbeat sweeper reclaims tasks if a drone
+crashes mid-work. A GPU mutex serializes Ollama access so concurrent
+drones on the same machine run under contention without thrashing.
+
+Verified end-to-end on a live 3-drone run: every primitive — atomic
+claim, flocking entanglement with contextually-appropriate sibling
+selection, GPU serialization, sweeper-reclaim, dedup gate making
+real contextual decisions (block one drone's near-duplicate,
+accept another's orthogonal angle) — fired correctly on a real
+research topic. Works for any workload that decomposes into
+independent claims: parallel web scraping, multi-source research,
+distributed audits.
+
+The swarm is its own coordination plane; daily Claude/Gemini lane
+work runs on pull-routing + trio observation. The two share the
+PSE daemon and the agent identity surface, but the dispatch and
+lifecycle primitives are distinct. Code:
+[Context-Continuum/swarm](https://github.com/Context-Continuum/swarm).
 
 ## Contact
 
