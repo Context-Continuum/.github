@@ -23,8 +23,9 @@ federated.
 Across clusters, **a different memory engine on each side**. Our
 cluster runs PhaseShift Engine (more on that below); the peer
 cluster runs a different vector backend entirely. The federation
-protocol — scratchpad daemon, Firestore-mediated channel, ambassador-
-pattern agent representation — is engine-agnostic *by demonstration*,
+protocol — local-daemon comms layer, Firestore-mediated channel,
+ambassador-pattern agent representation — is engine-agnostic *by
+demonstration*,
 not by claim. We've proved interop by running different stacks, not
 by adopting the same one.
 
@@ -45,7 +46,12 @@ spaced-repetition behavior (`docs/MEMORY.md:40-49`). Half-life
 anchored on `last_accessed` not creation timestamp, so frequently-
 recalled memories stay strong as the underlying text ages. Air-
 gapped local-first design, P2P sync across machines, MCP endpoint
-for direct agent integration.
+for direct agent integration. Forked from Qdrant 1.17.1 — we
+inherit a mature HNSW indexing backend and strip the enterprise
+multi-tenancy surface in favor of agentic primitives. We don't
+know of another vector store that ships access-driven decay at the
+engine level; competitors approximate it via post-query reranking
+or TTL eviction, and neither is the same mechanism.
 
 **1M-record validation, Tier 1 across the board**
 (`docs/RELEASE_NOTES_v0.1.1.md`). 1M-record corpus, BGE-base 768d,
@@ -67,12 +73,24 @@ automatic HNSW build closed the gap.
 `load-dynamic` linking so the runtime DLL stays out of our binary
 (user supplies it at runtime — single-binary positioning preserved).
 Production model: **BGE-base-en-v1.5** (768d, BERT WordPiece,
-512-token max). **Byte-identical recall results between CoreML on
-Apple M3 (ANE-dispatched) and CUDA on RTX-class (CUDA Graph +
-IoBinding)** on the same ONNX export — zero precision drift across
-execution providers (`results/cluster_ab_10k_bge_base.md`). A
-`HashEmbedder` fallback keeps the default build dependency-light
-for callers who bring their own vectors.
+512-token max sequence). A `HashEmbedder` fallback keeps the default
+build dependency-light for callers who bring their own vectors.
+
+**GPU acceleration, cross-platform** — the same ONNX export runs on
+five execution providers: **Apple Neural Engine** via CoreML (Mac),
+**NVIDIA CUDA** (Linux + Windows, with CUDA Graph + IoBinding for
+sub-call overhead), **DirectML** (Windows AMD / Intel iGPU), **ROCm**
+(Linux AMD), and CPU fallback. Build feature selects the EP set
+(`cargo build --features coreml | cuda | directml | rocm`); runtime
+`--ep` flag prioritizes (`--ep cuda --ep cpu`). The two measured at
+production scale — **CoreML on Apple M3 (ANE-dispatched) and CUDA on
+RTX-class (CUDA Graph + IoBinding)** — produce **byte-identical
+recall results** on the same ONNX export, validating zero precision
+drift between execution providers
+(`results/cluster_ab_10k_bge_base.md`). DirectML and ROCm have
+documented build paths and first-boot validation; scale benchmarks
+for those two are a known canon-block gap
+(`gpu_phase_8_results`), not a missing capability.
 
 **Multi-language AST extraction** — `crates/ast` parses four
 languages via Rust-native crates with zero tree-sitter / libclang
@@ -86,6 +104,50 @@ embedding → stable-concept-id upsert
 source file UPSERTS the matching memories in place rather than
 producing duplicates. Code-search index that updates as the codebase
 changes, with no FFI build complexity in the dependency tree.
+
+**Single coordination model, three scales** — the same primitives
+work whether agents are on one machine, one cluster, or across
+clusters. On a single machine: local Claude and local Gemini share
+the daemon and coordinate without leaving the box. Within a cluster
+spanning multiple machines: each box runs its own daemon + bridge
+pair (the Voltron pattern), and agents on different machines
+coordinate through the cluster's shared substrate. Across clusters
+of independent operators: a Firestore-mediated channel + ambassador-
+agent pattern lets foreign clusters request attention without ever
+touching local internals. The mechanisms don't change at the
+boundaries — same coordination model, three operational scales.
+
+**Wake-routing audience filter** — every agent comm is routed by
+addressee. The wake filter surfaces only messages directly addressed
+to this agent OR group broadcasts flagged with action-or-higher
+urgency; informational traffic stays on the channel without waking
+anyone. Empirically: ~95% of cluster traffic is filtered out before
+it reaches an agent. **Cross-cluster wake** is an opt-in V1.2
+protocol: a foreign cluster marks a Mission Control item with a
+wake-target field, our filter picks it up via Firestore polling, an
+anti-double-wake check prevents loops. Silently backwards-compatible
+when Firestore credentials aren't configured — the same agent code
+runs in daemon-only mode without modification.
+
+**UDP tripwire mesh** — every successful write on a daemon emits a
+lightweight UDP broadcast. Peer daemons listen and trigger a
+reactive sync pull on receive (`UdpTripwireEmitter` +
+`UdpTripwireListener` + `MeshSyncTrigger`, wired in
+`src/bin/phaseshift.rs:846-1049`). **Sub-5-second cluster-global
+write visibility on LAN** — UDP latency in milliseconds plus the
+pull RTT, no peer needing to poll on a tight schedule. A periodic
+full-sync backstop catches anything UDP drops. Fast path is the
+tripwire; correctness guarantee is the reconciler.
+
+**Cross-encoder reranker** — optional rerank stage between the
+bi-encoder retrieval and the final top-N (`OnnxReranker` +
+`OnnxRerankerConfig` in `crates/embed`; attached via
+`with_reranker`, queried via `recall_reranked`). Cost: ~20-40 ms
+per query at K=20 candidates on CoreML or CUDA — well within the
+Tier 1 latency budget. Targets the deep R@1 ceiling that the
+bi-encoder retrieval plateaus at. ONNX-backed so the same five-
+provider execution stack applies (Apple ANE, NVIDIA CUDA, DirectML,
+ROCm, CPU).
 
 **Hook telemetry sink (B1)** — every fire/suppress/error of every
 cluster discipline hook gets schema-validated and append-only
@@ -128,7 +190,7 @@ prevents agents from backing off pointlessly. *The pull-route +
 capability-offer pattern is informed by ACE; the F5 substrate-
 honesty distinction is our addition.*
 
-**Rule-based curator** — turns scratchpad activity into queryable
+**Rule-based curator** — turns agent comm activity into queryable
 bulletpoints with **zero LLM tokens consumed** (deterministic,
 auditable, free). Built as the first product of one of our
 substrate upgrades. *Some tool-call functionality threaded in from
