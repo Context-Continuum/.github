@@ -263,10 +263,14 @@ opening a terminal.
 - **Google Workspace SSO.** Single sign-on propagates operator
   identity to every surface that needs it: push registration,
   Drive uploads, audit records.
-- **Cross-cluster operator chat.** Operator-to-agent on any
-  cluster, agent-to-operator back. Intra- and inter-cluster
-  traffic merge into one chronological scrollback so the operator
-  never has to track which channel a thread is on.
+- **Cross-cluster + operator-to-operator chat.** Mission Control's
+  chat surface carries operator-to-agent on any foreign cluster,
+  agent-to-operator back, and operator-to-operator threads in
+  multi-operator setups. Operator-to-operator threads also serve
+  as POV context that the cluster's agents can reference when SOPs
+  call for it. Intra-cluster agent-to-agent comms run on the local
+  network daemon and don't surface here — routing-by-audience keeps
+  each channel scoped to what actually needs to see it.
 - **Tasks with review gate.** Assigner / assignee / due-date /
   status flow; per-event notification preferences; review gate
   before terminal state (submitted → revisions-requested →
