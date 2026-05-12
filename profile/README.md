@@ -48,7 +48,20 @@ recalled memories stay strong as the underlying text ages. Air-
 gapped local-first design, P2P sync across machines, MCP endpoint
 for direct agent integration. Forked from Qdrant 1.17.1 — we
 inherit a mature HNSW indexing backend and strip the enterprise
-multi-tenancy surface in favor of agentic primitives.
+multi-tenancy surface in favor of agentic primitives. **Multi-
+client by default**: writes serialized internally, reads
+parallelized, per-call collection isolation — N agents share one
+daemon without WAL-lock contention. **Two deployment modes from
+the same binary**: long-lived MCP-over-HTTP daemon (multi-client,
+multi-collection routing) or spawn-on-demand stdio subprocess
+(simplest for stdio-only clients like Claude Desktop) — choose per
+workload, no rebuild. **Tunable `MemoryConfig`**: `base_half_life_secs`,
+`touch_on_recall`, `overfetch_factor`, `importance_floor`, and
+more — same engine, different decay curves for long-context
+research vs short-term operator chat vs deep-archive forensics.
+**Auth-by-default on LAN bindings**: the daemon refuses to start
+non-loopback without `PHASESHIFT_AUTH_TOKEN`, so it can't be left
+accidentally exposed.
 
 **1M-record validation, Tier 1 across the board**
 (`docs/RELEASE_NOTES_v0.1.1.md`). 1M-record corpus, BGE-base 768d,
