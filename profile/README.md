@@ -48,10 +48,7 @@ recalled memories stay strong as the underlying text ages. Air-
 gapped local-first design, P2P sync across machines, MCP endpoint
 for direct agent integration. Forked from Qdrant 1.17.1 — we
 inherit a mature HNSW indexing backend and strip the enterprise
-multi-tenancy surface in favor of agentic primitives. We don't
-know of another vector store that ships access-driven decay at the
-engine level; competitors approximate it via post-query reranking
-or TTL eviction, and neither is the same mechanism.
+multi-tenancy surface in favor of agentic primitives.
 
 **1M-record validation, Tier 1 across the board**
 (`docs/RELEASE_NOTES_v0.1.1.md`). 1M-record corpus, BGE-base 768d,
@@ -255,6 +252,44 @@ Google Drive API via Domain-Wide Delegation, Node 20, Python 3.12,
 PowerShell on Windows + zsh/bash on macOS, PhaseShift Engine (our
 Rust 2024 memory engine), Firebase Auth + Google Workspace identity
 model for federated multi-operator attribution.
+
+## Mission Control
+
+The operator-facing surface for the cluster — web UI accessible
+from any browser or phone, backed by Firestore plus a per-machine
+Python bridge. It's what makes the cluster operable without
+opening a terminal.
+
+- **Google Workspace SSO.** Single sign-on propagates operator
+  identity to every surface that needs it: push registration,
+  Drive uploads, audit records.
+- **Cross-cluster operator chat.** Operator-to-agent on any
+  cluster, agent-to-operator back. Intra- and inter-cluster
+  traffic merge into one chronological scrollback so the operator
+  never has to track which channel a thread is on.
+- **Tasks with review gate.** Assigner / assignee / due-date /
+  status flow; per-event notification preferences; review gate
+  before terminal state (submitted → revisions-requested →
+  approved).
+- **Milestones + decision lanes.** Milestone items mark
+  substantive deliveries on the home feed. Decision items capture
+  architectural choices + alternatives considered + the resolution
+  — durable references rather than buried-in-chat history.
+- **Drive-archived build-lore.** Substantive work auto-generates a
+  500–1500 word extended report uploaded to a Drive folder via
+  delegated-domain authority; the home-feed item carries a one-
+  click link so deep context is never more than one hop away.
+- **GitHub webhook → items.** Commits flow into the home feed
+  automatically — verified live this session, three commits
+  landed as items within seconds of push.
+- **File-capable bridge.** Operators upload files through the
+  surface; agents pick them up in context without a separate
+  hand-off step.
+- **Per-event FCM push.** Notifications to operator phones with
+  per-event opt-in toggles and quiet-hours support. Data-only
+  payload shape, service-worker-rendered — works on PWA-installed
+  Chrome Android with custom title/body, not the OS-default
+  fallback.
 
 ## Autonomous research swarm
 
