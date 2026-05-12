@@ -182,6 +182,18 @@ V2 reads exact `usage.input_tokens + cache_creation_input_tokens +
 cache_read_input_tokens` from `.jsonl` — the substrate-not-proxy
 doctrine applied to context-fill measurement.
 
+**Living SOP automation inventory** — every cluster norm has a row
+in `docs/SOP_AUTOMATION_INVENTORY.md` tracking its automation state
+(`automated` / `partial` / `prose-only`), the measurable signal that
+triggers it, and the hook path that fires the reminder. Eight-plus
+SOPs already on the automated tier: breadcrumb-at-threshold,
+turn-zero Monitor arm, catch-up digest visibility, urgency
+discipline, post-merge live-smoke, cross-cluster routing checks,
+hook telemetry sink, wake-reliability harness. The inventory is
+the receipts page for PROCESS FORTIFICATION DOCTRINE — when an SOP
+gains a measurable signal it moves up the ladder, when a prose-only
+norm gets identified it gets a row.
+
 **Trio observation substrate** — typed `(claim_kind, evidence_kind)`
 pairs validated at the write boundary. Refuse-at-write rejection of
 unknown enums + missing `authored_by` fields stops bad observations
@@ -303,7 +315,14 @@ opening a terminal.
   any browser) push files and links straight to agents running on
   their home or office machines — the agent picks them up in
   context without a separate hand-off step. Run an errand, hand
-  the workstation agent a PDF + a URL, keep moving.
+  the workstation agent a PDF + a URL, keep moving. Wire format
+  ratified by foreign-cluster ambassador review (10 redlines, 6
+  folded, 2 clarified, 2 parked) so the protocol carries across
+  clusters. 100 MB cap with resumable upload for large files;
+  failed uploads surface as struck-through tiles with error
+  tooltips, not silent drops; schema-versioned for forward-compat;
+  both Drive view URL and content URL attached so PDFs and SVGs
+  embed inline.
 - **Per-event FCM push.** Notifications to operator phones with
   per-event opt-in toggles and quiet-hours support. Data-only
   payload shape, service-worker-rendered — works on PWA-installed
