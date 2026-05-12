@@ -147,7 +147,12 @@ reactive sync pull on receive (`UdpTripwireEmitter` +
 write visibility on LAN** — UDP latency in milliseconds plus the
 pull RTT, no peer needing to poll on a tight schedule. A periodic
 full-sync backstop catches anything UDP drops. Fast path is the
-tripwire; correctness guarantee is the reconciler.
+tripwire; correctness guarantee is the reconciler. **`groups.yaml`
+strong-consistency startup gate**: each daemon computes SHA-256 of
+its local cluster-config on boot, probes known peers, and refuses
+to start on hash mismatch (operator-overridable for legitimate
+divergence mid-rollout). Cluster-config drift catches at startup
+instead of silently mid-run.
 
 **Cross-encoder reranker** — optional rerank stage between the
 bi-encoder retrieval and the final top-N (`OnnxReranker` +
@@ -308,6 +313,9 @@ opening a terminal.
   500–1500 word extended report uploaded to a Drive folder via
   delegated-domain authority; the home-feed item carries a one-
   click link so deep context is never more than one hop away.
+  Narrow `drive.file` OAuth scope — Mission Control can only see
+  or edit files it created itself or files the operator explicitly
+  attaches via Picker. It can't read the rest of your Drive.
 - **GitHub webhook → items.** Commits flow into the home feed
   automatically — verified live this session, three commits
   landed as items within seconds of push.
@@ -328,6 +336,12 @@ opening a terminal.
   payload shape, service-worker-rendered — works on PWA-installed
   Chrome Android with custom title/body, not the OS-default
   fallback.
+- **Agent dispatch from any surface.** Operators or agents trigger
+  agent runs from Mission Control or from peer-agent comms; a per-
+  machine watchdog turns those triggers into actual local agent
+  execution. Same model whether the trigger comes from an operator
+  on a phone or from another agent on the cluster — Mission Control
+  isn't just a read-only feed, it's a remote-control surface.
 
 ## Autonomous research swarm
 
